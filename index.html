@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BioStat · Calculadora Muestral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── THEME VARIABLES ─────────────────────────── */
+:root, [data-theme="light"] {
+  --bg: #f4f6fb;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+  --card2: #f0f4f9;
+  --border: rgba(13, 148, 136, 0.18);
+  --border2: rgba(15, 23, 42, 0.08);
+  --accent: #0d9488;
+  --accent2: #0f766e;
+  --gold: #d97706;
+  --text: #0f172a;
+  --muted: #64748b;
+  --red: #e11d48;
+  --nav-item: #475569;
+  --overlay: rgba(15, 23, 42, 0.45);
+  --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  --input-bg: rgba(15, 23, 42, 0.03);
+  --formula-bg: rgba(15, 23, 42, 0.04);
+  --radius: 14px;
+  --sidebar-w: 272px;
+}
+
+[data-theme="dark"] {
+  --bg: #07091a;
+  --sidebar-bg: #04061a;
+  --card-bg: #0e1128;
+  --card2: #111630;
+  --border: rgba(46, 246, 194, 0.12);
+  --border2: rgba(255, 255, 255, 0.07);
+  --accent: #2ef6c2;
+  --accent2: #1ad4a7;
+  --gold: #f5c53a;
+  --text: #e2e8f8;
+  --muted: #7a85a8;
+  --red: #f06292;
+  --nav-item: #99a8cc;
+  --overlay: rgba(0, 0, 0, 0.65);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --formula-bg: rgba(0, 0, 0, 0.25);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+/* ── SIDEBAR ────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  z-index: 100;
+  transition: transform 0.28s ease, background 0.25s ease, border-color 0.25s ease;
+}
+.brand {
+  padding: 24px 20px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.brand-text { flex: 1; min-width: 0; }
+.brand-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+  line-height: 1;
+}
+.brand-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.nav-section {
+  padding: 16px 0 4px;
+}
+.nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 20px 8px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--nav-item);
+  transition: all .15s;
+  border-left: 2px solid transparent;
+  line-height: 1.3;
+}
+.nav-item:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--text); }
+.nav-item.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+.nav-icon {
+  font-size: 15px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.sidebar-footer {
+  margin-top: auto;
+  padding: 14px 16px 18px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Theme switch */
+.theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.theme-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.theme-switch {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+}
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.theme-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--input-bg);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.theme-slider::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background: var(--accent);
+  border-radius: 50%;
+  transition: 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.theme-switch input:checked + .theme-slider {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: var(--accent);
+}
+.theme-switch input:checked + .theme-slider::before {
+  transform: translateX(22px);
+}
+.theme-icons {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  pointer-events: none;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.btn-credits {
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-credits:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* ── MAIN ────────────────────────────────── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+#topbar {
+  padding: 18px 28px 16px;
+  border-bottom: 1px solid var(--border2);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: background 0.25s ease;
+}
+.topbar-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+.topbar-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+#content {
+  flex: 1;
+  padding: 28px 28px 40px;
+  overflow-y: auto;
+}
+
+/* Hamburger (mobile) */
+.hamburger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border2);
+  background: var(--card-bg);
+  border-radius: 10px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+.hamburger:hover { border-color: var(--accent); }
+.hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+  position: relative;
+}
+.hamburger span::before,
+.hamburger span::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+}
+.hamburger span::before { top: -6px; }
+.hamburger span::after { top: 6px; }
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 90;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.sidebar-overlay.visible {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* HOME SCREEN */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 4px;
+}
+.home-section-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+  grid-column: 1/-1;
+}
+.home-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: var(--shadow);
+}
+.home-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--card2);
+  transform: translateY(-2px);
+}
+.home-card-icon { font-size: 22px; margin-top: 1px; flex-shrink: 0; }
+.home-card-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.3;
+}
+.home-card-desc { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+
+/* CALCULATOR LAYOUT */
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 340px);
+  gap: 22px;
+  align-items: start;
+}
+
+/* CARDS */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 24px 26px;
+  box-shadow: var(--shadow);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+/* FORM */
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  margin-bottom: 16px;
+}
+.field-full { grid-column: 1/-1; }
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 5px;
+  letter-spacing: 0.02em;
+}
+.field input, .field select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .15s, background 0.25s ease;
+  -webkit-appearance: none;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+[data-theme="dark"] .field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a85a8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+}
+.opts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  margin-bottom: 16px;
+}
+.opts-full { grid-column: 1/-1; }
+.radio-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+  background: var(--input-bg);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 7px 12px;
+  transition: all .15s;
+}
+.radio-group input[type=radio] { display: none; }
+.radio-group input[type=radio]:checked + span { color: var(--accent); font-weight: 600; }
+.radio-group label:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.means-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.btn-calc {
+  width: 100%;
+  padding: 13px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background .15s, transform .1s;
+  margin-top: 4px;
+}
+[data-theme="dark"] .btn-calc { color: #07091a; }
+.btn-calc:hover { background: var(--accent2); transform: translateY(-1px); }
+.btn-calc:active { transform: translateY(0); }
+
+/* RESULTS */
+.results-card {
+  position: sticky;
+  top: 88px;
+  background: var(--card-bg);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.result-hero {
+  padding: 26px 24px 18px;
+  border-bottom: 1px solid var(--border2);
+  text-align: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent);
+}
+.result-main {
+  font-family: 'Fira Code', monospace;
+  font-size: 48px;
+  font-weight: 500;
+  color: var(--gold);
+  line-height: 1;
+  letter-spacing: -2px;
+}
+.result-unit {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.result-rows { padding: 14px 24px 6px; }
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border2);
+  font-size: 13px;
+}
+.result-row:last-child { border-bottom: none; }
+.rk { color: var(--muted); }
+.rv { font-family: 'Fira Code', monospace; font-size: 13px; color: var(--text); }
+.rv.accent { color: var(--accent); }
+.formula-box {
+  margin: 8px 20px 18px;
+  background: var(--formula-bg);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-family: 'Fira Code', monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+.result-placeholder {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.result-placeholder .ph-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+.error-msg {
+  padding: 18px 24px;
+  color: var(--red);
+  font-size: 13px;
+  background: color-mix(in srgb, var(--red) 8%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--red) 18%, transparent);
+  line-height: 1.5;
+}
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 5px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.badge-p { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.badge-m { background: color-mix(in srgb, var(--gold) 16%, transparent); color: var(--gold); }
+
+/* ANOVA group means */
+.anova-wrap { grid-column: 1/-1; }
+
+/* ── MODAL ────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+.modal-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+.modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  max-width: 560px;
+  width: 100%;
+  max-height: min(88vh, 720px);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.22s ease, background 0.25s ease;
+}
+.modal-backdrop.open .modal {
+  transform: translateY(0) scale(1);
+}
+.modal-header {
+  padding: 22px 24px 14px;
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+.modal-close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: var(--input-bg);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.modal-close:hover {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+}
+.modal-body {
+  padding: 18px 24px 26px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+}
+.modal-body h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 18px 0 8px;
+}
+.modal-body h3:first-child { margin-top: 0; }
+.modal-body p { margin-bottom: 10px; color: var(--text); }
+.modal-body ul {
+  margin: 6px 0 12px 18px;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.modal-body li { margin-bottom: 4px; }
+.modal-author {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 15px;
+}
+.modal-note {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+/* ── RESPONSIVE ─────────────────────────────── */
+@media (max-width: 960px) {
+  .calc-grid { grid-template-columns: 1fr; }
+  .results-card { position: static; }
+  .home-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  #sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    transform: translateX(-100%);
+    box-shadow: 8px 0 32px rgba(0,0,0,0.18);
+  }
+  #sidebar.open { transform: translateX(0); }
+  .hamburger { display: flex; }
+  #topbar { padding: 14px 16px; }
+  #content { padding: 20px 16px 32px; }
+  .fields-grid,
+  .opts-grid { grid-template-columns: 1fr; }
+  .result-main { font-size: 40px; }
+  .topbar-title { font-size: 18px; }
+  .card { padding: 18px 16px; }
+  .brand { padding: 20px 16px 14px; }
+}
+
+@media (max-width: 420px) {
+  .result-main { font-size: 34px; letter-spacing: -1.5px; }
+  .modal { border-radius: 14px; }
+  .modal-header, .modal-body { padding-left: 16px; padding-right: 16px; }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Overlay mobile -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="brand">
+    <div class="brand-text">
+      <div class="brand-name">BioStat</div>
+      <div class="brand-sub">Calculadora Muestral</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Proporciones</div>
+    <div class="nav-item" onclick="loadTest('p1'); closeSidebar()" id="nav-p1"><span class="nav-icon">⚖️</span>Dos proporciones independientes</div>
+    <div class="nav-item" onclick="loadTest('p2'); closeSidebar()" id="nav-p2"><span class="nav-icon">📊</span>Observada vs referencia</div>
+    <div class="nav-item" onclick="loadTest('p3'); closeSidebar()" id="nav-p3"><span class="nav-icon">🔗</span>Medidas apareadas (McNemar)</div>
+    <div class="nav-item" onclick="loadTest('p4'); closeSidebar()" id="nav-p4"><span class="nav-icon">🔄</span>Bioequivalencia (TOST)</div>
+    <div class="nav-item" onclick="loadTest('p5'); closeSidebar()" id="nav-p5"><span class="nav-icon">🌐</span>Estimación poblacional</div>
+    <div class="nav-item" onclick="loadTest('p6'); closeSidebar()" id="nav-p6"><span class="nav-icon">🎲</span>Odds Ratio (OR)</div>
+    <div class="nav-item" onclick="loadTest('p7'); closeSidebar()" id="nav-p7"><span class="nav-icon">📈</span>Riesgo Relativo (RR)</div>
+    <div class="nav-item" onclick="loadTest('p8'); closeSidebar()" id="nav-p8"><span class="nav-icon">⚡</span>Potencia (proporciones)</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Medias</div>
+    <div class="nav-item" onclick="loadTest('m1'); closeSidebar()" id="nav-m1"><span class="nav-icon">📐</span>Dos medias independientes</div>
+    <div class="nav-item" onclick="loadTest('m2'); closeSidebar()" id="nav-m2"><span class="nav-icon">🔁</span>Medidas apareadas (pre-post)</div>
+    <div class="nav-item" onclick="loadTest('m3'); closeSidebar()" id="nav-m3"><span class="nav-icon">↔️</span>Medidas apareadas (crossover)</div>
+    <div class="nav-item" onclick="loadTest('m4'); closeSidebar()" id="nav-m4"><span class="nav-icon">🎯</span>Observada vs referencia</div>
+    <div class="nav-item" onclick="loadTest('m5'); closeSidebar()" id="nav-m5"><span class="nav-icon">🌍</span>Estimación poblacional</div>
+    <div class="nav-item" onclick="loadTest('m6'); closeSidebar()" id="nav-m6"><span class="nav-icon">🧮</span>ANOVA (varios grupos)</div>
+    <div class="nav-item" onclick="loadTest('m7'); closeSidebar()" id="nav-m7"><span class="nav-icon">⚡</span>Potencia (medias)</div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="theme-row">
+      <span class="theme-label">
+        <span id="theme-icon">☀️</span>
+        <span id="theme-text">Tema claro</span>
+      </span>
+      <label class="theme-switch" title="Cambiar tema">
+        <input type="checkbox" id="theme-toggle" aria-label="Cambiar entre tema claro y oscuro">
+        <span class="theme-slider">
+          <span class="theme-icons"><span>☀️</span><span>🌙</span></span>
+        </span>
+      </label>
+    </div>
+    <button type="button" class="btn-credits" onclick="openCredits()">ℹ️ Créditos y resumen</button>
+    <div style="font-size:10.5px; line-height:1.5; opacity:0.9;">
+      Fórmulas basadas en Fleiss, Lehr &amp; Scherman, Cohen.<br>
+      Uso exclusivamente orientativo.
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="topbar">
+    <button type="button" class="hamburger" id="hamburger" aria-label="Abrir menú" onclick="toggleSidebar()">
+      <span></span>
+    </button>
+    <div style="min-width:0; flex:1;">
+      <div class="topbar-title" id="topbar-title">Calculadora de Tamaño Muestral</div>
+      <div class="topbar-desc" id="topbar-desc">Selecciona un método en el menú lateral para comenzar.</div>
+    </div>
+  </div>
+  <div id="content">
+    <!-- Rendered dynamically -->
+  </div>
+</div>
+
+
+<!-- CREDITS MODAL -->
+<div class="modal-backdrop" id="credits-modal" role="dialog" aria-modal="true" aria-labelledby="credits-title" onclick="if(event.target===this) closeCredits()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="credits-title">Créditos</div>
+      </div>
+      <button type="button" class="modal-close" onclick="closeCredits()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="modal-body">
+      <h3>Autor</h3>
+      <p class="modal-author">Dr. José Manuel Fernández Carreira</p>
+
+      <h3>Resumen de funciones</h3>
+      <p>BioStat es una calculadora de tamaño muestral orientada a estudios biomédicos y epidemiológicos. Incluye 15 calculadores:</p>
+      <ul>
+        <li><strong>Proporciones (8):</strong> Dos proporciones independientes · Observada vs referencia · McNemar · Bioequivalencia TOST · Estimación poblacional · Odds Ratio · Riesgo Relativo · Potencia</li>
+        <li><strong>Medias (7):</strong> Dos medias independientes · Pre-post (un grupo) · Crossover (dos grupos) · Observada vs referencia · Estimación poblacional · ANOVA · Potencia</li>
+      </ul>
+      <p>Cada calculador muestra el resultado principal en dorado, una tabla de valores intermedios (Z<sub>α</sub>, Z<sub>β</sub>, etc.) y la fórmula en monospace. El ANOVA acepta medias grupales directamente (calcula <em>f</em> automáticamente) o <em>f</em> de Cohen manual.</p>
+
+      <h3>Notas de uso</h3>
+      <ul>
+        <li>Los cálculos se basan en aproximaciones normales y en las fórmulas clásicas de Fleiss, Lehr &amp; Scherman y Cohen. Son orientativos y no sustituyen el asesoramiento estadístico formal.</li>
+        <li>En diseños con pérdidas de seguimiento o estratificación suele ser conveniente incrementar el tamaño muestral calculado.</li>
+        <li>El tema claro/oscuro se guarda en el navegador (localStorage).</li>
+        <li>La aplicación funciona íntegramente en el cliente; no se envían datos a ningún servidor.</li>
+      </ul>
+
+      <div class="modal-note">
+        Uso exclusivamente orientativo. Verifique siempre los supuestos (normalidad, independencia, varianzas, etc.) y consulte a un bioestadístico cuando el diseño sea complejo o las decisiones clínicas dependan del tamaño muestral.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// ════════════════════════════════════════════
+//  THEME + UI HELPERS
+// ════════════════════════════════════════════
+(function initTheme() {
+  const saved = localStorage.getItem('biostat-theme');
+  const theme = saved === 'dark' ? 'dark' : 'light'; // default light
+  document.documentElement.setAttribute('data-theme', theme);
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    toggle.checked = theme === 'dark';
+    updateThemeLabel(theme);
+  }
+})();
+
+function updateThemeLabel(theme) {
+  const icon = document.getElementById('theme-icon');
+  const text = document.getElementById('theme-text');
+  if (icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+  if (text) text.textContent = theme === 'dark' ? 'Tema oscuro' : 'Tema claro';
+}
+
+document.getElementById('theme-toggle')?.addEventListener('change', function () {
+  const theme = this.checked ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('biostat-theme', theme);
+  updateThemeLabel(theme);
+});
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const open = !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  ov.classList.toggle('visible', open);
+  document.body.style.overflow = open ? 'hidden' : '';
+}
+function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebar-overlay')?.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+function openCredits() {
+  document.getElementById('credits-modal')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  closeSidebar();
+}
+function closeCredits() {
+  document.getElementById('credits-modal')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeCredits();
+    closeSidebar();
+  }
+});
+
+// ════════════════════════════════════════════
+//  STATISTICAL FUNCTIONS
+// ════════════════════════════════════════════
+
+// Normal quantile (Beasley-Springer-Moro)
+function normalQ(p) {
+  if (p <= 0) return -Infinity;
+  if (p >= 1) return Infinity;
+  const a = [2.50662823884, -18.61500062529, 41.39119773534, -25.44106049637];
+  const b = [-8.47351093090, 23.08336743743, -21.06224101826, 3.13082909833];
+  const c = [0.3374754822726147, 0.9761690190917186, 0.1607979714918209,
+             0.0276438810333863, 0.0038405729373609, 0.0003951896511349,
+             0.0000321767881768, 0.0000002888167364, 0.0000003960315187];
+  let r, x;
+  const q = p - 0.5;
+  if (Math.abs(q) <= 0.42) {
+    r = q * q;
+    x = q * (((a[3]*r+a[2])*r+a[1])*r+a[0]) / ((((b[3]*r+b[2])*r+b[1])*r+b[0])*r+1);
+  } else {
+    r = p < 0.5 ? p : 1 - p;
+    r = Math.log(-Math.log(r));
+    x = c[0]+r*(c[1]+r*(c[2]+r*(c[3]+r*(c[4]+r*(c[5]+r*(c[6]+r*(c[7]+r*c[8])))))));
+    if (q < 0) x = -x;
+  }
+  return x;
+}
+
+// Normal CDF (Abramowitz & Stegun)
+function normalCDF(x) {
+  const t = 1/(1+0.2316419*Math.abs(x));
+  const poly = t*(0.319381530 + t*(-0.356563782 + t*(1.781477937 + t*(-1.821255978 + t*1.330274429))));
+  const pdf = Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);
+  const cdf = 1 - pdf*poly;
+  return x >= 0 ? cdf : 1 - cdf;
+}
+
+function Za(alpha, twoSided) {
+  return normalQ(twoSided ? 1 - alpha/2 : 1 - alpha);
+}
+function Zb(power) {
+  return normalQ(power);
+}
+
+// Log-Gamma (Lanczos)
+function logGamma(x) {
+  const g = 7;
+  const c = [0.99999999999980993,676.5203681218851,-1259.1392167224028,
+             771.32342877765313,-176.61502916214059,12.507343278686905,
+             -0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI/Math.sin(Math.PI*x)) - logGamma(1-x);
+  x -= 1;
+  let a = c[0];
+  const t = x + g + 0.5;
+  for (let i = 1; i < g+2; i++) a += c[i]/(x+i);
+  return 0.5*Math.log(2*Math.PI) + (x+0.5)*Math.log(t) - t + Math.log(a);
+}
+
+// Regularized incomplete beta (Lentz CF)
+function ibeta(a, b, x) {
+  if (x < 0 || x > 1) return NaN;
+  if (x === 0) return 0;
+  if (x === 1) return 1;
+  if (x > (a+1)/(a+b+2)) return 1 - ibeta(b, a, 1-x);
+  const lbeta = logGamma(a) + logGamma(b) - logGamma(a+b);
+  const front = Math.exp(Math.log(x)*a + Math.log(1-x)*b - lbeta) / a;
+  // Lentz CF
+  let f = 1, C = 1, D = 1 - (a+b)*x/(a+1);
+  if (Math.abs(D) < 1e-30) D = 1e-30;
+  D = 1/D; f = D;
+  for (let m = 1; m <= 200; m++) {
+    let num = m*(b-m)*x / ((a+2*m-1)*(a+2*m));
+    D = 1 + num*D; if (Math.abs(D)<1e-30) D=1e-30; D=1/D;
+    C = 1 + num/C; if (Math.abs(C)<1e-30) C=1e-30;
+    f *= C*D;
+    num = -(a+m)*(a+b+m)*x / ((a+2*m)*(a+2*m+1));
+    D = 1 + num*D; if (Math.abs(D)<1e-30) D=1e-30; D=1/D;
+    C = 1 + num/C; if (Math.abs(C)<1e-30) C=1e-30;
+    const delta = C*D;
+    f *= delta;
+    if (Math.abs(delta-1) < 1e-12) break;
+  }
+  return front * f;
+}
+
+// F CDF
+function fCDF(x, d1, d2) {
+  if (x <= 0) return 0;
+  return ibeta(d1/2, d2/2, d1*x/(d1*x+d2));
+}
+
+// F quantile (bisection)
+function fQ(p, d1, d2) {
+  let lo = 0, hi = 1000;
+  for (let i = 0; i < 120; i++) {
+    const mid = (lo+hi)/2;
+    fCDF(mid, d1, d2) < p ? lo = mid : hi = mid;
+  }
+  return (lo+hi)/2;
+}
+
+// Non-central F power (Poisson mixture)
+function ncfPower(d1, d2, lambda, fcrit) {
+  let power = 0;
+  const halfL = lambda/2;
+  let logPoisson = -halfL; // log P(j=0)
+  for (let j = 0; j <= 80; j++) {
+    if (j > 0) logPoisson += Math.log(halfL) - Math.log(j);
+    const pj = Math.exp(logPoisson);
+    if (pj < 1e-15) break;
+    power += pj * (1 - fCDF(fcrit, d1+2*j, d2));
+  }
+  return power;
+}
+
+// ════════════════════════════════════════════
+//  TEST DEFINITIONS
+// ════════════════════════════════════════════
+const TESTS = {
+
+  // ── PROPORCIONES ──────────────────────────
+  p1: {
+    title: "Dos proporciones independientes",
+    icon: "⚖️",
+    desc: "Compara dos proporciones en grupos independientes (casos/controles, ensayo/control).",
+    badge: "p",
+    fields: [
+      { id:"p1", label:"Proporción grupo 1 (p₁)", val:"0.30", hint:"0 – 1" },
+      { id:"p2", label:"Proporción grupo 2 (p₂)", val:"0.50", hint:"0 – 1" },
+      { id:"r",  label:"Ratio controles/casos (r)", val:"1", hint:"≥1" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[
+          {v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}
+        ], val:"0.05"
+      },
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[
+          {v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}
+        ], val:"0.80"
+      },
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[
+          {v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}
+        ], val:"2"
+      },
+    ],
+    calc(f) {
+      const p1=f.p1, p2=f.p2, r=f.r, alpha=f.alpha, power=f.power, sided=f.sided;
+      if (p1<=0||p1>=1||p2<=0||p2>=1) return {error:"p₁ y p₂ deben estar en (0,1)."};
+      if (r<1) return {error:"r debe ser ≥ 1."};
+      const pbar = (p1 + r*p2)/(1+r);
+      const za = Za(alpha, sided===2);
+      const zb = Zb(power);
+      const A = za * Math.sqrt((1+1/r)*pbar*(1-pbar));
+      const B = zb * Math.sqrt(p1*(1-p1) + p2*(1-p2)/r);
+      const n1 = Math.ceil((A+B)**2 / (p1-p2)**2);
+      const n2 = Math.ceil(r*n1);
+      return {
+        main: n1, label: "n por grupo 1",
+        rows: [
+          {k:"n₂ (grupo 2)", v: n2},
+          {k:"Total", v: n1+n2, cl:"accent"},
+          {k:"p̄ ponderada", v: pbar.toFixed(4)},
+          {k:"Z_α", v: za.toFixed(3)},
+          {k:"Z_β", v: zb.toFixed(3)},
+        ],
+        formula:`n₁ = (Zα·√((1+1/r)·p̄(1-p̄)) + Zβ·√(p₁(1-p₁)+p₂(1-p₂)/r))²
+       ──────────────────────────────────────────────
+                      (p₁ - p₂)²
+
+p̄ = (p₁ + r·p₂) / (1 + r)`
+      };
+    }
+  },
+
+  p2: {
+    title: "Observada vs referencia",
+    icon: "📊",
+    desc: "Contraste de una proporción observada frente a un valor de referencia conocido.",
+    badge: "p",
+    fields: [
+      { id:"p0", label:"Proporción referencia (p₀)", val:"0.50" },
+      { id:"p1", label:"Proporción esperada (p₁)", val:"0.65" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {p0,p1,alpha,power,sided}=f;
+      if (p0<=0||p0>=1||p1<=0||p1>=1) return {error:"p₀ y p₁ deben estar en (0,1)."};
+      if (p0===p1) return {error:"p₀ y p₁ no pueden ser iguales."};
+      const za=Za(alpha,sided===2), zb=Zb(power);
+      const n = Math.ceil((za*Math.sqrt(p0*(1-p0)) + zb*Math.sqrt(p1*(1-p1)))**2 / (p1-p0)**2);
+      return {
+        main:n, label:"Tamaño muestral n",
+        rows:[{k:"δ = |p₁−p₀|", v:Math.abs(p1-p0).toFixed(4)},{k:"Z_α",v:za.toFixed(3)},{k:"Z_β",v:zb.toFixed(3)}],
+        formula:`n = (Zα·√(p₀(1-p₀)) + Zβ·√(p₁(1-p₁)))²
+  ─────────────────────────────────────────
+               (p₁ − p₀)²`
+      };
+    }
+  },
+
+  p3: {
+    title: "Medidas apareadas · McNemar",
+    icon: "🔗",
+    desc: "Diseños apareados (pre-post, gemelos, casos-controles emparejados) con respuesta binaria.",
+    badge: "p",
+    fields: [
+      { id:"p01", label:"P(+/−) discordante p₀₁", val:"0.10", hint:"Positivo→Negativo" },
+      { id:"p10", label:"P(−/+) discordante p₁₀", val:"0.25", hint:"Negativo→Positivo" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {p01,p10,alpha,power,sided}=f;
+      if (p01<=0||p10<=0||p01>=1||p10>=1) return {error:"Las proporciones discordantes deben estar en (0,1)."};
+      const pd=p01+p10, delta=Math.abs(p01-p10);
+      if (delta===0) return {error:"p₀₁ y p₁₀ no pueden ser iguales."};
+      const za=Za(alpha,sided===2), zb=Zb(power);
+      const n=Math.ceil((za*Math.sqrt(pd)+zb*Math.sqrt(pd-delta**2))**2/delta**2);
+      return {
+        main:n, label:"Pares (n total)",
+        rows:[{k:"pd = p₀₁+p₁₀",v:pd.toFixed(4)},{k:"Δ = |p₀₁−p₁₀|",v:delta.toFixed(4)},{k:"Z_α",v:za.toFixed(3)},{k:"Z_β",v:zb.toFixed(3)}],
+        formula:`n = (Zα·√(pd) + Zβ·√(pd − Δ²))²
+  ──────────────────────────────────
+               Δ²
+
+pd = p₀₁ + p₁₀,  Δ = |p₀₁ − p₁₀|`
+      };
+    }
+  },
+
+  p4: {
+    title: "Bioequivalencia · TOST",
+    icon: "🔄",
+    desc: "Equivalencia de dos formulaciones (Two One-Sided Tests). Resultados en log-escala.",
+    badge: "p",
+    fields: [
+      { id:"cv",   label:"CV intra-sujeto (%)", val:"20", hint:"Coef. variación %" },
+      { id:"delta",label:"Margen de equivalencia δ (%)", val:"20", hint:"Típico: 20%" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α (un lado)", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.025",l:"0.025"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"design", label:"Diseño", type:"radio", options:[{v:"crossover",l:"Crossover (2×2)"},{v:"parallel",l:"Paralelo"}], val:"crossover"},
+    ],
+    calc(f) {
+      const {cv,delta,alpha,power,design}=f;
+      if (cv<=0) return {error:"CV debe ser > 0."};
+      if (delta<=0) return {error:"δ debe ser > 0."};
+      const sigmaW=Math.sqrt(Math.log(1+(cv/100)**2));
+      const deltaLog=Math.log(1+delta/100);
+      const za=Za(alpha,false), zb=Zb(power); // one-sided
+      const k=design==="crossover"?2:4;
+      const n=Math.ceil(k*(za+zb)**2*sigmaW**2/deltaLog**2);
+      return {
+        main:n, label: design==="crossover"?"Sujetos (total)":"n por grupo",
+        rows:[
+          {k:"σ_w (log)",v:sigmaW.toFixed(4)},
+          {k:"Δ_log",v:deltaLog.toFixed(4)},
+          {k:"k (factor diseño)",v:k},
+          {k:"Z_α (unilateral)",v:za.toFixed(3)},
+          {k:"Z_β",v:zb.toFixed(3)},
+        ],
+        formula:`n = k · (Zα + Zβ)² · σ²_w
+  ─────────────────────────────
+          Δ²_log
+
+σ_w = √(ln(1 + CV²)),  Δ = ln(1 + δ%)
+k = 2 (crossover)  /  4 (paralelo)`
+      };
+    }
+  },
+
+  p5: {
+    title: "Estimación de proporción poblacional",
+    icon: "🌐",
+    desc: "Muestra necesaria para estimar una proporción con un margen de error e.",
+    badge: "p",
+    fields: [
+      { id:"p",  label:"Proporción estimada p", val:"0.50", hint:"0.5 si desconocida" },
+      { id:"e",  label:"Margen de error (e)", val:"0.05", hint:"Precisión absoluta" },
+      { id:"N",  label:"Tamaño poblacional N", val:"", hint:"Dejar vacío si infinito" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+    ],
+    calc(f) {
+      const {p,e,alpha}=f;
+      const N=f.N;
+      if (p<=0||p>=1) return {error:"p debe estar en (0,1)."};
+      if (e<=0||e>=1) return {error:"El margen de error debe estar en (0,1)."};
+      const z=Za(alpha,true);
+      const n0=Math.ceil(z**2*p*(1-p)/e**2);
+      let n=n0, fpc=false;
+      if (N>0) { n=Math.ceil(n0*N/(n0+N-1)); fpc=true; }
+      return {
+        main:n, label:"Tamaño muestral n",
+        rows:[
+          {k:"n sin corrección",v:n0},
+          ...(fpc?[{k:"n con FPC (N="+N+")",v:n,cl:"accent"}]:[]),
+          {k:"Z_α/2",v:z.toFixed(3)},
+          {k:"p(1−p)",v:(p*(1-p)).toFixed(4)},
+        ],
+        formula:`n₀ = Z²·p(1−p) / e²
+
+n = n₀·N / (n₀ + N − 1)  [con FPC]`
+      };
+    }
+  },
+
+  p6: {
+    title: "Odds Ratio (OR)",
+    icon: "🎲",
+    desc: "Tamaño muestral en estudios de casos y controles dado el OR esperado.",
+    badge: "p",
+    fields: [
+      { id:"p0", label:"Prop. exposición en controles (p₀)", val:"0.30" },
+      { id:"OR", label:"Odds Ratio esperado (OR)", val:"2.0" },
+      { id:"r",  label:"Controles por caso (r)", val:"1" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {p0,OR,r,alpha,power,sided}=f;
+      if (p0<=0||p0>=1) return {error:"p₀ debe estar en (0,1)."};
+      if (OR<=0) return {error:"OR debe ser > 0."};
+      if (r<1) return {error:"r debe ser ≥ 1."};
+      const p1=OR*p0/(1+p0*(OR-1));
+      if (p1<=0||p1>=1) return {error:"OR produce p₁ fuera de (0,1). Revise los valores."};
+      const pbar=(p1+r*p0)/(1+r);
+      const za=Za(alpha,sided===2), zb=Zb(power);
+      const A=za*Math.sqrt((1+1/r)*pbar*(1-pbar));
+      const B=zb*Math.sqrt(p1*(1-p1)+p0*(1-p0)/r);
+      const n1=Math.ceil((A+B)**2/(p1-p0)**2);
+      const n0=Math.ceil(r*n1);
+      return {
+        main:n1, label:"Casos (n₁)",
+        rows:[
+          {k:"Prop. exposición en casos (p₁)",v:p1.toFixed(4)},
+          {k:"Controles (n₀)",v:n0},
+          {k:"Total",v:n1+n0,cl:"accent"},
+          {k:"Z_α",v:za.toFixed(3)},{k:"Z_β",v:zb.toFixed(3)},
+        ],
+        formula:`p₁ = OR·p₀ / (1 + p₀·(OR−1))
+
+n₁ = (Zα·√((1+1/r)·p̄(1-p̄)) + Zβ·√(p₁(1-p₁)+p₀(1-p₀)/r))²
+   ─────────────────────────────────────────────────────────────
+                         (p₁ − p₀)²`
+      };
+    }
+  },
+
+  p7: {
+    title: "Riesgo Relativo (RR)",
+    icon: "📈",
+    desc: "Tamaño muestral en estudios de cohortes dado el RR esperado.",
+    badge: "p",
+    fields: [
+      { id:"p0", label:"Incidencia en no expuestos (p₀)", val:"0.10" },
+      { id:"RR", label:"Riesgo Relativo esperado (RR)", val:"2.0" },
+      { id:"r",  label:"No expuestos por expuesto (r)", val:"1" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {p0,RR,r,alpha,power,sided}=f;
+      if (p0<=0||p0>=1) return {error:"p₀ debe estar en (0,1)."};
+      if (RR<=0) return {error:"RR debe ser > 0."};
+      const p1=RR*p0;
+      if (p1>=1) return {error:"RR·p₀ ≥ 1. Revise los valores."};
+      const pbar=(p1+r*p0)/(1+r);
+      const za=Za(alpha,sided===2), zb=Zb(power);
+      const A=za*Math.sqrt((1+1/r)*pbar*(1-pbar));
+      const B=zb*Math.sqrt(p1*(1-p1)+p0*(1-p0)/r);
+      const n1=Math.ceil((A+B)**2/(p1-p0)**2);
+      const n0=Math.ceil(r*n1);
+      return {
+        main:n1, label:"Expuestos (n₁)",
+        rows:[
+          {k:"Incidencia en expuestos (p₁)",v:p1.toFixed(4)},
+          {k:"No expuestos (n₀)",v:n0},
+          {k:"Total",v:n1+n0,cl:"accent"},
+          {k:"Z_α",v:za.toFixed(3)},{k:"Z_β",v:zb.toFixed(3)},
+        ],
+        formula:`p₁ = RR · p₀
+
+n₁ = (Zα·√((1+1/r)·p̄(1-p̄)) + Zβ·√(p₁(1-p₁)+p₀(1-p₀)/r))²
+   ─────────────────────────────────────────────────────────────
+                         (p₁ − p₀)²`
+      };
+    }
+  },
+
+  p8: {
+    title: "Potencia · Proporciones",
+    icon: "⚡",
+    desc: "Calcula la potencia alcanzada con un n fijo comparando dos proporciones.",
+    badge: "p",
+    powerMode: true,
+    fields: [
+      { id:"n",  label:"Tamaño muestral por grupo (n)", val:"50" },
+      { id:"p1", label:"Proporción grupo 1 (p₁)", val:"0.60" },
+      { id:"p2", label:"Proporción grupo 2 (p₂)", val:"0.40" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {n,p1,p2,alpha,sided}=f;
+      if (n<2) return {error:"n debe ser ≥ 2."};
+      if (p1<=0||p1>=1||p2<=0||p2>=1) return {error:"p₁ y p₂ deben estar en (0,1)."};
+      const za=Za(alpha,sided===2);
+      const pbar=(p1+p2)/2;
+      const seH0=Math.sqrt(2*pbar*(1-pbar)/n);
+      const seH1=Math.sqrt((p1*(1-p1)+p2*(1-p2))/n);
+      const z=(Math.abs(p1-p2)-za*seH0)/seH1;
+      const power=normalCDF(z);
+      const pct=(power*100).toFixed(1);
+      return {
+        main:pct, label:"Potencia (%)",
+        rows:[
+          {k:"|p₁−p₂|",v:Math.abs(p1-p2).toFixed(4)},
+          {k:"SE (H₀)",v:seH0.toFixed(4)},
+          {k:"SE (H₁)",v:seH1.toFixed(4)},
+          {k:"Z estadístico",v:z.toFixed(3)},
+          {k:"Potencia",v:pct+"%",cl:"accent"},
+        ],
+        formula:`Z = (|p₁−p₂| − Zα·SE_H0) / SE_H1
+Potencia = Φ(Z)
+
+SE_H0 = √(2·p̄(1-p̄)/n)
+SE_H1 = √((p₁(1-p₁) + p₂(1-p₂))/n)`
+      };
+    }
+  },
+
+  // ── MEDIAS ─────────────────────────────────
+  m1: {
+    title: "Dos medias independientes",
+    icon: "📐",
+    desc: "Contraste de medias en dos grupos independientes (ensayo clínico, estudio de cohortes).",
+    badge: "m",
+    fields: [
+      { id:"delta", label:"Diferencia clínicamente relevante δ", val:"5" },
+      { id:"sigma", label:"Desviación estándar σ", val:"10" },
+      { id:"r",     label:"Ratio n₂/n₁ (r)", val:"1" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {delta,sigma,r,alpha,power,sided}=f;
+      if (sigma<=0) return {error:"σ debe ser > 0."};
+      if (delta<=0) return {error:"δ debe ser > 0."};
+      if (r<1) return {error:"r debe ser ≥ 1."};
+      const za=Za(alpha,sided===2), zb=Zb(power);
+      const n1=Math.ceil((za+zb)**2*sigma**2*(1+1/r)/delta**2);
+      const n2=Math.ceil(r*n1);
+      return {
+        main:n1, label:"n grupo 1",
+        rows:[{k:"n₂",v:n2},{k:"Total",v:n1+n2,cl:"accent"},{k:"d = δ/σ",v:(delta/sigma).toFixed(3)},{k:"Z_α",v:za.toFixed(3)},{k:"Z_β",v:zb.toFixed(3)}],
+        formula:`n₁ = (Zα + Zβ)² · σ² · (1 + 1/r)
+  ───────────────────────────────────
+               δ²`
+      };
+    }
+  },
+
+  m2: {
+    title: "Medidas apareadas · Pre-Post (un grupo)",
+    icon: "🔁",
+    desc: "Diseño pre-post en un solo grupo. σ_d es la DE de la diferencia intra-sujeto.",
+    badge: "m",
+    fields: [
+      { id:"delta", label:"Diferencia media esperada δ", val:"5" },
+      { id:"sigma", label:"DE de la diferencia σ_d", val:"8" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {delta,sigma,alpha,power,sided}=f;
+      if (sigma<=0) return {error:"σ_d debe ser > 0."};
+      if (delta<=0) return {error:"δ debe ser > 0."};
+      const za=Za(alpha,sided===2), zb=Zb(power);
+      const n=Math.ceil((za+zb)**2*sigma**2/delta**2);
+      return {
+        main:n, label:"Pares (n total)",
+        rows:[{k:"δ/σ_d",v:(delta/sigma).toFixed(3)},{k:"Z_α",v:za.toFixed(3)},{k:"Z_β",v:zb.toFixed(3)}],
+        formula:`n = (Zα + Zβ)² · σ²_d
+  ─────────────────────────
+           δ²`
+      };
+    }
+  },
+
+  m3: {
+    title: "Medidas apareadas · Crossover (dos grupos)",
+    icon: "↔️",
+    desc: "Diseño crossover con dos períodos. Introduce las DE individuales y la correlación.",
+    badge: "m",
+    fields: [
+      { id:"delta", label:"Diferencia media esperada δ", val:"5" },
+      { id:"s1",    label:"DE grupo 1 (σ₁)", val:"8" },
+      { id:"s2",    label:"DE grupo 2 (σ₂)", val:"8" },
+      { id:"rho",   label:"Correlación intra-sujeto ρ", val:"0.5", hint:"−1 a 1" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {delta,s1,s2,rho,alpha,power,sided}=f;
+      if (s1<=0||s2<=0) return {error:"Las DE deben ser > 0."};
+      if (delta<=0) return {error:"δ debe ser > 0."};
+      if (rho<=-1||rho>=1) return {error:"ρ debe estar en (−1, 1)."};
+      const sigmaD=Math.sqrt(s1**2+s2**2-2*rho*s1*s2);
+      const za=Za(alpha,sided===2), zb=Zb(power);
+      const n=Math.ceil((za+zb)**2*sigmaD**2/delta**2);
+      return {
+        main:n, label:"Sujetos por secuencia",
+        rows:[{k:"σ_d",v:sigmaD.toFixed(4)},{k:"δ/σ_d",v:(delta/sigmaD).toFixed(3)},{k:"Z_α",v:za.toFixed(3)},{k:"Z_β",v:zb.toFixed(3)}],
+        formula:`σ²_d = σ²₁ + σ²₂ − 2ρ·σ₁·σ₂
+
+n = (Zα + Zβ)² · σ²_d
+  ─────────────────────────
+           δ²`
+      };
+    }
+  },
+
+  m4: {
+    title: "Media observada vs referencia",
+    icon: "🎯",
+    desc: "Contraste de la media de un grupo frente a un valor de referencia μ₀.",
+    badge: "m",
+    fields: [
+      { id:"mu0",   label:"Media de referencia (μ₀)", val:"100" },
+      { id:"mu1",   label:"Media esperada (μ₁)", val:"108" },
+      { id:"sigma", label:"Desviación estándar (σ)", val:"15" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {mu0,mu1,sigma,alpha,power,sided}=f;
+      if (sigma<=0) return {error:"σ debe ser > 0."};
+      if (mu0===mu1) return {error:"μ₀ y μ₁ no pueden ser iguales."};
+      const delta=Math.abs(mu1-mu0);
+      const za=Za(alpha,sided===2), zb=Zb(power);
+      const n=Math.ceil((za+zb)**2*sigma**2/delta**2);
+      return {
+        main:n, label:"Tamaño muestral n",
+        rows:[{k:"δ = |μ₁−μ₀|",v:delta.toFixed(3)},{k:"d = δ/σ",v:(delta/sigma).toFixed(3)},{k:"Z_α",v:za.toFixed(3)},{k:"Z_β",v:zb.toFixed(3)}],
+        formula:`n = (Zα + Zβ)² · σ²
+  ──────────────────────────
+       (μ₁ − μ₀)²`
+      };
+    }
+  },
+
+  m5: {
+    title: "Estimación de media poblacional",
+    icon: "🌍",
+    desc: "Muestra necesaria para estimar una media con un margen de error e.",
+    badge: "m",
+    fields: [
+      { id:"sigma", label:"Desviación estándar (σ)", val:"15" },
+      { id:"e",     label:"Margen de error (e)", val:"3" },
+      { id:"N",     label:"Tamaño poblacional N", val:"", hint:"Vacío = infinito" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+    ],
+    calc(f) {
+      const {sigma,e,alpha}=f;
+      const N=f.N;
+      if (sigma<=0) return {error:"σ debe ser > 0."};
+      if (e<=0) return {error:"e debe ser > 0."};
+      const z=Za(alpha,true);
+      const n0=Math.ceil(z**2*sigma**2/e**2);
+      let n=n0, fpc=false;
+      if (N>0) { n=Math.ceil(n0*N/(n0+N-1)); fpc=true; }
+      return {
+        main:n, label:"Tamaño muestral n",
+        rows:[{k:"n sin corrección",v:n0},...(fpc?[{k:"n con FPC (N="+N+")",v:n,cl:"accent"}]:[]),{k:"Z_α/2",v:z.toFixed(3)}],
+        formula:`n₀ = Z² · σ² / e²
+
+n = n₀·N / (n₀ + N − 1)  [con FPC]`
+      };
+    }
+  },
+
+  m6: {
+    title: "ANOVA · Varios grupos",
+    icon: "🧮",
+    desc: "Tamaño muestral para ANOVA de un factor. Introduce medias grupales o la f de Cohen.",
+    badge: "m",
+    isAnova: true,
+    fields: [
+      { id:"k",     label:"Número de grupos (k)", val:"3" },
+      { id:"sigma", label:"DE intra-grupos (σ)", val:"10" },
+      { id:"f",     label:"f de Cohen (opcional)", val:"0.25", hint:"0.10=pequeño, 0.25=medio, 0.40=grande" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"power", label:"Potencia (1-β)", type:"select", options:[{v:"0.80",l:"80%"},{v:"0.90",l:"90%"},{v:"0.95",l:"95%"}], val:"0.80"},
+    ],
+    calc(f) {
+      const {k,sigma,alpha,power}=f;
+      let cohen_f=f.f;
+      const meansStr=f._means||"";
+      if (k<2) return {error:"k debe ser ≥ 2."};
+      if (sigma<=0) return {error:"σ debe ser > 0."};
+      if (meansStr.trim()) {
+        const means=meansStr.split(",").map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
+        if (means.length!==k) return {error:`Introduce exactamente ${k} medias separadas por comas.`};
+        const mubar=means.reduce((a,b)=>a+b,0)/k;
+        const sigmaBetween=Math.sqrt(means.reduce((s,m)=>s+(m-mubar)**2,0)/k);
+        cohen_f=sigmaBetween/sigma;
+      }
+      if (cohen_f<=0) return {error:"f de Cohen debe ser > 0."};
+      // Iterative search
+      const za=alpha; // for F test
+      for (let n=2; n<=5000; n++) {
+        const lambda=n*k*cohen_f**2;
+        const df1=k-1, df2=k*(n-1);
+        const fcrit=fQ(1-za,df1,df2);
+        const pw=ncfPower(df1,df2,lambda,fcrit);
+        if (pw>=power) {
+          return {
+            main:n, label:"n por grupo",
+            rows:[
+              {k:"Grupos (k)",v:k},
+              {k:"f de Cohen",v:cohen_f.toFixed(3)},
+              {k:"λ (no-centralidad)",v:(n*k*cohen_f**2).toFixed(2)},
+              {k:"Total",v:n*k,cl:"accent"},
+              {k:"Potencia alcanzada",v:(pw*100).toFixed(1)+"%"},
+            ],
+            formula:`λ = n · k · f²
+Potencia = P(F(k−1, k(n−1), λ) > F_crit)
+
+f pequeño=0.10, medio=0.25, grande=0.40`
+          };
+        }
+      }
+      return {error:"No se alcanza la potencia deseada con n ≤ 5000."};
+    }
+  },
+
+  m7: {
+    title: "Potencia · Medias",
+    icon: "⚡",
+    desc: "Calcula la potencia alcanzada con un n fijo comparando dos medias.",
+    badge: "m",
+    powerMode: true,
+    fields: [
+      { id:"n",     label:"Tamaño muestral por grupo (n)", val:"50" },
+      { id:"delta", label:"Diferencia de medias (δ)", val:"5" },
+      { id:"sigma", label:"Desviación estándar (σ)", val:"10" },
+    ],
+    opts: [
+      { id:"alpha", label:"Nivel α", type:"select", options:[{v:"0.05",l:"0.05"},{v:"0.01",l:"0.01"},{v:"0.10",l:"0.10"}], val:"0.05"},
+      { id:"sided", label:"Tipo de contraste", type:"radio", options:[{v:"2",l:"Bilateral"},{v:"1",l:"Unilateral"}], val:"2"},
+    ],
+    calc(f) {
+      const {n,delta,sigma,alpha,sided}=f;
+      if (n<2) return {error:"n debe ser ≥ 2."};
+      if (sigma<=0) return {error:"σ debe ser > 0."};
+      if (delta<=0) return {error:"δ debe ser > 0."};
+      const za=Za(alpha,sided===2);
+      const z=Math.abs(delta)*Math.sqrt(n)/(sigma*Math.sqrt(2))-za;
+      const power=normalCDF(z);
+      const pct=(power*100).toFixed(1);
+      return {
+        main:pct, label:"Potencia (%)",
+        rows:[{k:"d = δ/σ",v:(delta/sigma).toFixed(3)},{k:"Z estadístico",v:z.toFixed(3)},{k:"Potencia",v:pct+"%",cl:"accent"}],
+        formula:`Z = |δ|·√n / (σ·√2) − Zα
+Potencia = Φ(Z)`
+      };
+    }
+  }
+};
+
+// ════════════════════════════════════════════
+//  UI RENDERING
+// ════════════════════════════════════════════
+let currentTest = null;
+
+function loadTest(id) {
+  currentTest = id;
+  // Update sidebar active
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('nav-'+id)?.classList.add('active');
+
+  const t = TESTS[id];
+  document.getElementById('topbar-title').innerHTML =
+    t.icon + ' ' + t.title +
+    `<span class="badge badge-${t.badge}">${t.badge==='p'?'Prop.':'Medias'}</span>`;
+  document.getElementById('topbar-desc').textContent = t.desc;
+
+  const html = `
+    <div class="calc-grid">
+      <div class="card">
+        <div class="card-title">Parámetros de entrada</div>
+        ${buildForm(t, id)}
+      </div>
+      <div class="results-card" id="results-card">
+        <div class="result-placeholder">
+          <div class="ph-icon">🧮</div>
+          Introduce los parámetros<br>y pulsa <strong>Calcular</strong>.
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+function buildForm(t, id) {
+  // Fields grid
+  let fieldsHtml = '<div class="fields-grid">';
+  t.fields.forEach(f => {
+    fieldsHtml += `<div class="field">
+      <label for="f_${f.id}">${f.label}</label>
+      <input type="number" id="f_${f.id}" value="${f.val}" step="any" placeholder="${f.hint||''}">
+      ${f.hint?`<div class="means-hint">${f.hint}</div>`:''}
+    </div>`;
+  });
+  // ANOVA group means textarea
+  if (t.isAnova) {
+    fieldsHtml += `<div class="field anova-wrap field-full">
+      <label for="f_means">Medias grupales (opcional, separadas por coma)</label>
+      <input type="text" id="f_means" placeholder="p.ej: 100, 105, 112" style="font-family:'DM Sans',sans-serif">
+      <div class="means-hint">Si introduces medias, se calcula f automáticamente ignorando el campo f de Cohen.</div>
+    </div>`;
+  }
+  fieldsHtml += '</div>';
+
+  // Options
+  let optsHtml = '<div class="opts-grid">';
+  t.opts.forEach(o => {
+    if (o.type==='select') {
+      optsHtml += `<div class="field">
+        <label for="o_${o.id}">${o.label}</label>
+        <select id="o_${o.id}">
+          ${o.options.map(opt=>`<option value="${opt.v}"${opt.v===o.val?' selected':''}>${opt.l}</option>`).join('')}
+        </select>
+      </div>`;
+    } else if (o.type==='radio') {
+      optsHtml += `<div class="field opts-full">
+        <label>${o.label}</label>
+        <div class="radio-group">
+          ${o.options.map(opt=>`<label>
+            <input type="radio" name="r_${o.id}" value="${opt.v}"${opt.v===o.val?' checked':''}>
+            <span>${opt.l}</span>
+          </label>`).join('')}
+        </div>
+      </div>`;
+    }
+  });
+  optsHtml += '</div>';
+
+  return fieldsHtml + optsHtml + `<button class="btn-calc" onclick="calculate()">Calcular</button>`;
+}
+
+function readFields() {
+  const t = TESTS[currentTest];
+  const vals = {};
+  t.fields.forEach(f => {
+    const el = document.getElementById('f_'+f.id);
+    vals[f.id] = el ? parseFloat(el.value) : NaN;
+  });
+  t.opts.forEach(o => {
+    if (o.type==='select') {
+      const el = document.getElementById('o_'+o.id);
+      vals[o.id] = el ? parseFloat(el.value) : parseFloat(o.val);
+    } else if (o.type==='radio') {
+      const checked = document.querySelector(`input[name="r_${o.id}"]:checked`);
+      vals[o.id] = checked ? parseFloat(checked.value) : parseFloat(o.options[0].v);
+    }
+  });
+  if (t.isAnova) {
+    const el = document.getElementById('f_means');
+    vals._means = el ? el.value : '';
+  }
+  // sided as number
+  if (vals.sided !== undefined) vals.sided = vals.sided;
+  return vals;
+}
+
+function calculate() {
+  const t = TESTS[currentTest];
+  const fields = readFields();
+  // Check NaN on numeric fields
+  for (const f of t.fields) {
+    if (isNaN(fields[f.id])) {
+      showError(`El campo "${f.label}" no tiene un valor válido.`);
+      return;
+    }
+  }
+  let result;
+  try { result = t.calc(fields); }
+  catch(e) { showError("Error de cálculo: "+e.message); return; }
+  if (result.error) { showError(result.error); return; }
+  showResult(result, t.powerMode);
+}
+
+function showResult(r, powerMode) {
+  let mainDisplay = r.main;
+  if (!powerMode && typeof r.main === 'number') mainDisplay = Math.ceil(r.main);
+
+  const rowsHtml = r.rows.map(row =>
+    `<div class="result-row">
+      <span class="rk">${row.k}</span>
+      <span class="rv ${row.cl||''}">${row.v}</span>
+    </div>`
+  ).join('');
+
+  document.getElementById('results-card').innerHTML = `
+    <div class="result-hero">
+      <div class="result-main">${mainDisplay}</div>
+      <div class="result-unit">${r.label}</div>
+    </div>
+    <div class="result-rows">${rowsHtml}</div>
+    <div class="formula-box">${r.formula}</div>`;
+}
+
+function showError(msg) {
+  document.getElementById('results-card').innerHTML = `
+    <div class="result-placeholder">
+      <div class="ph-icon">⚠️</div>
+    </div>
+    <div class="error-msg">${msg}</div>`;
+}
+
+// HOME
+function renderHome() {
+  document.getElementById('topbar-title').textContent = 'Calculadora de Tamaño Muestral';
+  document.getElementById('topbar-desc').textContent = 'Selecciona un método en el menú lateral o elige a continuación.';
+
+  const propIds = ['p1','p2','p3','p4','p5','p6','p7','p8'];
+  const mediasIds = ['m1','m2','m3','m4','m5','m6','m7'];
+
+  function cards(ids) {
+    return ids.map(id => {
+      const t = TESTS[id];
+      return `<div class="home-card" onclick="loadTest('${id}')">
+        <div class="home-card-icon">${t.icon}</div>
+        <div>
+          <div class="home-card-name">${t.title}</div>
+          <div class="home-card-desc">${t.desc}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('content').innerHTML = `
+    <div class="home-grid">
+      <div class="home-section-title">Proporciones</div>
+      ${cards(propIds)}
+      <div class="home-section-title" style="margin-top:12px">Medias</div>
+      ${cards(mediasIds)}
+    </div>`;
+}
+
+// Init
+renderHome();
+</script>
+</body>
+</html>
